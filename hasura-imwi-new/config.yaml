@@ -1,0 +1,8 @@
+version: 2
+endpoint: http://localhost:8080
+metadata_directory: metadata
+admin_secret: "jjdie02-8fh2h12-jfus52v2a-kc029kksc"
+actions:
+  kind: synchronous
+  handler_webhook_baseurl: http://localhost:3000
+# hasura console --admin-secret "jjdie02-8fh2h12-jfus52v2a-kc029kksc" --console-port 8082 --api-port 8083

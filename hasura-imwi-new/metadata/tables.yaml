@@ -1,0 +1,778 @@
+- table:
+    schema: public
+    name: angkatan
+  select_permissions:
+  - role: keuangan
+    permission:
+      columns:
+      - id
+      - name
+      - deskripsi
+      filter: {}
+- table:
+    schema: public
+    name: kelas
+  select_permissions:
+  - role: keuangan
+    permission:
+      columns:
+      - kode
+      - is_karyawan
+      filter: {}
+- table:
+    schema: public
+    name: keuangan_balance
+- table:
+    schema: public
+    name: keuangan_jenis_pembayaran
+  array_relationships:
+  - name: keuangan_pembayaran_mahasiswa_kwitansis
+    using:
+      foreign_key_constraint_on:
+        column: id_jenis_pembayaran
+        table:
+          schema: public
+          name: keuangan_pembayaran_mahasiswa_kwitansi
+  - name: keuangan_pembayaran_mahasiswa_others_kwitansis
+    using:
+      foreign_key_constraint_on:
+        column: id_jenis_pembayaran
+        table:
+          schema: public
+          name: keuangan_pembayaran_mahasiswa_others_kwitansi
+  select_permissions:
+  - role: keuangan
+    permission:
+      columns:
+      - id
+      - nama
+      filter: {}
+- table:
+    schema: public
+    name: keuangan_pembayaran_mahasiswa
+  object_relationships:
+  - name: mahasiswa
+    using:
+      foreign_key_constraint_on: id_mahasiswa
+  - name: user_karyawan
+    using:
+      foreign_key_constraint_on: created_by
+  array_relationships:
+  - name: rincian
+    using:
+      manual_configuration:
+        remote_table:
+          schema: public
+          name: keuangan_pembayaran_mahasiswa_rincian
+        column_mapping:
+          id: id_pembayaran_mahasiswa
+  insert_permissions:
+  - role: keuangan
+    permission:
+      check: {}
+      set:
+        created_by: x-hasura-user-id
+      columns:
+      - id
+      - id_mahasiswa
+      - cara_pembayaran
+      - total_cicilan
+      - is_dpp_full
+      - created_at
+      - updated_at
+      - created_by
+      backend_only: false
+  select_permissions:
+  - role: keuangan
+    permission:
+      columns:
+      - id_mahasiswa
+      - total_cicilan
+      - created_at
+      - updated_at
+      - created_by
+      - id
+      - cara_pembayaran
+      - is_dpp_full
+      filter: {}
+- table:
+    schema: public
+    name: keuangan_pembayaran_mahasiswa_kwitansi
+  object_relationships:
+  - name: keuangan_jenis_pembayaran
+    using:
+      foreign_key_constraint_on: id_jenis_pembayaran
+  - name: keuangan_pembayaran_mahasiswa_rincian
+    using:
+      foreign_key_constraint_on: id_pembayaran_mahasiswa_rincian
+  - name: user_karyawan
+    using:
+      foreign_key_constraint_on: created_by
+  insert_permissions:
+  - role: keuangan
+    permission:
+      check: {}
+      set:
+        created_by: x-hasura-user-id
+      columns:
+      - id
+      - id_pembayaran_mahasiswa_rincian
+      - jumlah
+      - created_at
+      - updated_at
+      - created_by
+      - catatan
+      - id_jenis_pembayaran
+      backend_only: false
+  select_permissions:
+  - role: keuangan
+    permission:
+      columns:
+      - id
+      - id_jenis_pembayaran
+      - id_pembayaran_mahasiswa_rincian
+      - jumlah
+      - catatan
+      - created_at
+      - updated_at
+      - created_by
+      filter: {}
+  event_triggers:
+  - name: onBayarSppDpp
+    definition:
+      enable_manual: false
+      insert:
+        columns: '*'
+    retry_conf:
+      num_retries: 1
+      interval_sec: 20
+      timeout_sec: 60
+    webhook: http://backend/sppdpp-update-balance
+- table:
+    schema: public
+    name: keuangan_pembayaran_mahasiswa_others_kwitansi
+  object_relationships:
+  - name: keuangan_jenis_pembayaran
+    using:
+      foreign_key_constraint_on: id_jenis_pembayaran
+  - name: keuangan_tipe_pembayaran
+    using:
+      foreign_key_constraint_on: id_tipe_pembayaran
+  - name: mahasiswa
+    using:
+      foreign_key_constraint_on: id_mahasiswa
+  - name: user_karyawan
+    using:
+      foreign_key_constraint_on: created_by
+  insert_permissions:
+  - role: keuangan
+    permission:
+      check: {}
+      set:
+        created_by: x-hasura-user-id
+      columns:
+      - id
+      - id_jenis_pembayaran
+      - id_mahasiswa
+      - id_tipe_pembayaran
+      - jumlah
+      - catatan
+      - created_at
+      - created_by
+      backend_only: false
+  select_permissions:
+  - role: keuangan
+    permission:
+      columns:
+      - id
+      - id_tipe_pembayaran
+      - created_by
+      - jumlah
+      - catatan
+      - created_at
+      - id_mahasiswa
+      - id_jenis_pembayaran
+      filter: {}
+      allow_aggregations: true
+  event_triggers:
+  - name: onMahasiswaBayarOther
+    definition:
+      enable_manual: false
+      insert:
+        columns: '*'
+    retry_conf:
+      num_retries: 0
+      interval_sec: 10
+      timeout_sec: 60
+    webhook: http://backend/other-update-balance
+- table:
+    schema: public
+    name: keuangan_pembayaran_mahasiswa_rincian
+  object_relationships:
+  - name: keuangan_pembayaran_mahasiswa
+    using:
+      foreign_key_constraint_on: id_pembayaran_mahasiswa
+  - name: user_karyawan
+    using:
+      foreign_key_constraint_on: created_by
+  array_relationships:
+  - name: keuangan_pembayaran_mahasiswa_kwitansis
+    using:
+      foreign_key_constraint_on:
+        column: id_pembayaran_mahasiswa_rincian
+        table:
+          schema: public
+          name: keuangan_pembayaran_mahasiswa_kwitansi
+  insert_permissions:
+  - role: keuangan
+    permission:
+      check: {}
+      set:
+        created_by: x-hasura-user-id
+      columns:
+      - id
+      - id_pembayaran_mahasiswa
+      - nama_pembayaran
+      - waktu_pembayaran
+      - jumlah_pembayaran
+      - created_at
+      - updated_at
+      - created_by
+      - is_lunas
+      backend_only: false
+  select_permissions:
+  - role: keuangan
+    permission:
+      columns:
+      - is_lunas
+      - waktu_pembayaran
+      - id
+      - nama_pembayaran
+      - created_at
+      - updated_at
+      - created_by
+      - id_pembayaran_mahasiswa
+      - jumlah_pembayaran
+      filter: {}
+      allow_aggregations: true
+  update_permissions:
+  - role: keuangan
+    permission:
+      columns:
+      - is_lunas
+      filter: {}
+      check: null
+- table:
+    schema: public
+    name: keuangan_tipe_pembayaran
+  array_relationships:
+  - name: keuangan_pembayaran_mahasiswa_others_kwitansis
+    using:
+      foreign_key_constraint_on:
+        column: id_tipe_pembayaran
+        table:
+          schema: public
+          name: keuangan_pembayaran_mahasiswa_others_kwitansi
+  - name: keuangan_transaksis
+    using:
+      foreign_key_constraint_on:
+        column: id_tipe_pembayaran
+        table:
+          schema: public
+          name: keuangan_transaksi
+  select_permissions:
+  - role: keuangan
+    permission:
+      columns:
+      - id
+      - nama
+      - created_at
+      - updated_at
+      - type
+      filter: {}
+      allow_aggregations: true
+- table:
+    schema: public
+    name: keuangan_transaksi
+  object_relationships:
+  - name: keuangan_tipe_pembayaran
+    using:
+      foreign_key_constraint_on: id_tipe_pembayaran
+  - name: user_karyawan
+    using:
+      foreign_key_constraint_on: created_by
+  insert_permissions:
+  - role: keuangan
+    permission:
+      check: {}
+      columns:
+      - id
+      - nama_pembayaran
+      - jumlah
+      - balance_now
+      - created_by
+      - created_at
+      - id_tipe_pembayaran
+      backend_only: false
+- table:
+    schema: public
+    name: mahasiswa
+  object_relationships:
+  - name: angkatan
+    using:
+      manual_configuration:
+        remote_table:
+          schema: public
+          name: angkatan
+        column_mapping:
+          id_angkatan: id
+  - name: biaya
+    using:
+      manual_configuration:
+        remote_table:
+          schema: public
+          name: setting_pembayaran
+        column_mapping:
+          is_karyawan: is_karyawan
+          id_angkatan: id_angkatan
+          kode_jurusan: id_jurusan
+  - name: kelas_mahasiswa
+    using:
+      manual_configuration:
+        remote_table:
+          schema: public
+          name: kelas
+        column_mapping:
+          kode_kelas: kode
+  - name: prodi
+    using:
+      manual_configuration:
+        remote_table:
+          schema: public
+          name: master_prodi
+        column_mapping:
+          kode_jurusan: id
+  array_relationships:
+  - name: keuangan_pembayaran_mahasiswa_others_kwitansis
+    using:
+      foreign_key_constraint_on:
+        column: id_mahasiswa
+        table:
+          schema: public
+          name: keuangan_pembayaran_mahasiswa_others_kwitansi
+  - name: keuangan_pembayaran_mahasiswas
+    using:
+      foreign_key_constraint_on:
+        column: id_mahasiswa
+        table:
+          schema: public
+          name: keuangan_pembayaran_mahasiswa
+  - name: mahasiswa_pakai_sistems
+    using:
+      foreign_key_constraint_on:
+        column: id_mahasiswa
+        table:
+          schema: public
+          name: mahasiswa_pakai_sistem
+  select_permissions:
+  - role: keuangan
+    permission:
+      columns:
+      - id
+      - nim
+      - password
+      - nama
+      - id_jenis_kelamin
+      - nisn
+      - tempat_lahir
+      - tanggal_lahir
+      - nik
+      - id_agama
+      - kebutuhan_khusus
+      - alamat
+      - rt
+      - rw
+      - dusun
+      - kelurahan
+      - kecamatan
+      - kode_pos
+      - jenis_tinggal
+      - alat_transportasi
+      - telepon
+      - hp
+      - email
+      - skhun
+      - penerima_kps
+      - no_kps
+      - foto
+      - nama_ayah
+      - tahun_lahir_ayah
+      - pendidikan_ayah
+      - pekerjaan_ayah
+      - penghasilan_ayah
+      - kebutuhan_khusus_ayah
+      - no_telpon_ayah
+      - nama_ibu
+      - tahun_lahir_ibu
+      - pendidikan_ibu
+      - pekerjaan_ibu
+      - penghasilan_ibu
+      - kebutuhan_khusus_ibu
+      - no_telpon_ibu
+      - nama_wali
+      - tahun_lahir_wali
+      - pendidikan_wali
+      - pekerjaan_wali
+      - penghasilan_wali
+      - id_angkatan
+      - status_awal
+      - status_siswa
+      - tingkat
+      - kode_kelas
+      - kode_jurusan
+      - id_sesi
+      - no_transkrip
+      - no_ijazah
+      - pin
+      - th_masuk
+      - tgl_lulus
+      - sts
+      - t_akademik
+      - ipk
+      - kelas
+      - th_lulus
+      - tgl_sidang
+      - is_karyawan
+      filter: {}
+      allow_aggregations: true
+- table:
+    schema: public
+    name: mahasiswa_pakai_sistem
+  object_relationships:
+  - name: mahasiswa
+    using:
+      foreign_key_constraint_on: id_mahasiswa
+  - name: user_karyawan
+    using:
+      foreign_key_constraint_on: created_by
+  insert_permissions:
+  - role: keuangan
+    permission:
+      check: {}
+      set:
+        created_by: x-hasura-user-id
+      columns:
+      - id
+      - id_mahasiswa
+      - sampai_tanggal
+      - created_by
+      - created_at
+      backend_only: false
+  select_permissions:
+  - role: keuangan
+    permission:
+      columns:
+      - id
+      - id_mahasiswa
+      - sampai_tanggal
+      - created_by
+      - created_at
+      filter: {}
+- table:
+    schema: public
+    name: master_fakultas
+  array_relationships:
+  - name: master_prodis
+    using:
+      foreign_key_constraint_on:
+        column: id_fakultas
+        table:
+          schema: public
+          name: master_prodi
+  select_permissions:
+  - role: keuangan
+    permission:
+      columns:
+      - id
+      - nama
+      - deskripsi
+      - created_at
+      - updated_at
+      filter: {}
+- table:
+    schema: public
+    name: master_prodi
+  object_relationships:
+  - name: fakultas
+    using:
+      foreign_key_constraint_on: id_fakultas
+  insert_permissions:
+  - role: super
+    permission:
+      check: {}
+      columns:
+      - id
+      - id_fakultas
+      - nama
+      - deskripsi
+      - kode
+      - nama_en
+      backend_only: false
+  select_permissions:
+  - role: keuangan
+    permission:
+      columns:
+      - id
+      - id_fakultas
+      - nama
+      - deskripsi
+      - kode
+      - nama_en
+      filter: {}
+- table:
+    schema: public
+    name: master_universitas
+  object_relationships:
+  - name: user_karyawan
+    using:
+      foreign_key_constraint_on: last_updated_by
+  select_permissions:
+  - role: keuangan
+    permission:
+      columns:
+      - id
+      - nama
+      - alamat
+      - kode_pos
+      - telp
+      - provinsi
+      - kota
+      - kecamatan
+      - kelurahan
+      - email
+      - website
+      - created_at
+      - updated_at
+      - last_updated_by
+      filter: {}
+- table:
+    schema: public
+    name: navigation
+  array_relationships:
+  - name: child
+    using:
+      manual_configuration:
+        remote_table:
+          schema: public
+          name: navigation
+        column_mapping:
+          id: id_parent
+  - name: role_navigations
+    using:
+      foreign_key_constraint_on:
+        column: id_navigation
+        table:
+          schema: public
+          name: role_navigation
+  insert_permissions:
+  - role: super
+    permission:
+      check: {}
+      columns:
+      - id
+      - nama
+      - icon
+      - link
+      - id_parent
+      backend_only: false
+  select_permissions:
+  - role: keuangan
+    permission:
+      columns:
+      - id
+      - id_parent
+      - icon
+      - link
+      - nama
+      filter: {}
+  - role: super
+    permission:
+      columns:
+      - id
+      - id_parent
+      - icon
+      - link
+      - nama
+      filter: {}
+- table:
+    schema: public
+    name: role
+  array_relationships:
+  - name: role_navigations
+    using:
+      foreign_key_constraint_on:
+        column: id_role
+        table:
+          schema: public
+          name: role_navigation
+  - name: user_karyawan_roles
+    using:
+      foreign_key_constraint_on:
+        column: id_role
+        table:
+          schema: public
+          name: user_karyawan_role
+  select_permissions:
+  - role: keuangan
+    permission:
+      columns:
+      - id
+      - name
+      filter: {}
+  - role: super
+    permission:
+      columns:
+      - id
+      - name
+      filter: {}
+- table:
+    schema: public
+    name: role_navigation
+  object_relationships:
+  - name: navigation
+    using:
+      foreign_key_constraint_on: id_navigation
+  - name: role
+    using:
+      foreign_key_constraint_on: id_role
+  select_permissions:
+  - role: keuangan
+    permission:
+      columns:
+      - id
+      - id_role
+      - id_navigation
+      filter: {}
+  - role: super
+    permission:
+      columns:
+      - id
+      - id_navigation
+      - id_role
+      filter: {}
+- table:
+    schema: public
+    name: setting_pembayaran
+  object_relationships:
+  - name: angkatan
+    using:
+      manual_configuration:
+        remote_table:
+          schema: public
+          name: angkatan
+        column_mapping:
+          id_angkatan: id
+  - name: jurusan
+    using:
+      manual_configuration:
+        remote_table:
+          schema: public
+          name: master_prodi
+        column_mapping:
+          id_jurusan: id
+  insert_permissions:
+  - role: keuangan
+    permission:
+      check: {}
+      columns:
+      - is_karyawan
+      - biaya_dpp
+      - biaya_spp
+      - id
+      - id_angkatan
+      - id_jurusan
+      backend_only: false
+  select_permissions:
+  - role: keuangan
+    permission:
+      columns:
+      - id
+      - id_angkatan
+      - id_jurusan
+      - is_karyawan
+      - biaya_dpp
+      - biaya_spp
+      filter: {}
+- table:
+    schema: public
+    name: tahun_ajar
+- table:
+    schema: public
+    name: user_karyawan
+  array_relationships:
+  - name: keuangan_pembayaran_mahasiswa_kwitansis
+    using:
+      foreign_key_constraint_on:
+        column: created_by
+        table:
+          schema: public
+          name: keuangan_pembayaran_mahasiswa_kwitansi
+  - name: keuangan_pembayaran_mahasiswa_others_kwitansis
+    using:
+      foreign_key_constraint_on:
+        column: created_by
+        table:
+          schema: public
+          name: keuangan_pembayaran_mahasiswa_others_kwitansi
+  - name: keuangan_pembayaran_mahasiswa_rincians
+    using:
+      foreign_key_constraint_on:
+        column: created_by
+        table:
+          schema: public
+          name: keuangan_pembayaran_mahasiswa_rincian
+  - name: keuangan_pembayaran_mahasiswas
+    using:
+      foreign_key_constraint_on:
+        column: created_by
+        table:
+          schema: public
+          name: keuangan_pembayaran_mahasiswa
+  - name: keuangan_transaksis
+    using:
+      foreign_key_constraint_on:
+        column: created_by
+        table:
+          schema: public
+          name: keuangan_transaksi
+  - name: mahasiswa_pakai_sistems
+    using:
+      foreign_key_constraint_on:
+        column: created_by
+        table:
+          schema: public
+          name: mahasiswa_pakai_sistem
+  - name: master_universitas
+    using:
+      foreign_key_constraint_on:
+        column: last_updated_by
+        table:
+          schema: public
+          name: master_universitas
+  - name: user_karyawan_roles
+    using:
+      foreign_key_constraint_on:
+        column: id_user_karyawan
+        table:
+          schema: public
+          name: user_karyawan_role
+- table:
+    schema: public
+    name: user_karyawan_role
+  object_relationships:
+  - name: role
+    using:
+      foreign_key_constraint_on: id_role
+  - name: user_karyawan
+    using:
+      foreign_key_constraint_on: id_user_karyawan

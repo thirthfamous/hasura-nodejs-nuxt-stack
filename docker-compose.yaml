@@ -1,0 +1,62 @@
+version: '3.6'
+services:
+  postgres:
+    image: postgres:12
+    restart: always
+    ports: 
+      - '5432:5432'
+    volumes:
+    - db_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: farhan
+      POSTGRES_PASSWORD: 101068
+  graphql-engine:
+    image: hasura/graphql-engine:v1.3.3
+    ports:
+    - "8080:8080"
+    depends_on:
+    - "postgres"
+    restart: always
+    environment:
+      HASURA_GRAPHQL_DATABASE_URL: postgres://farhan:101068@postgres:5432/postgres
+      ## enable the console served by server
+      HASURA_GRAPHQL_ENABLE_CONSOLE: "false" # set to "false" to disable console
+      ## enable debugging mode. It is recommended to disable this in production
+      HASURA_GRAPHQL_DEV_MODE: "true"
+      HASURA_GRAPHQL_ENABLED_LOG_TYPES: startup, http-log, webhook-log, websocket-log, query-log
+      ## uncomment next line to set an admin secret
+      HASURA_GRAPHQL_ADMIN_SECRET: jjdie02-8fh2h12-jfus52v2a-kc029kksc
+      HASURA_GRAPHQL_JWT_SECRET: '{"type": "HS256", "key": "99273-jg932-0i8yh2-83c0ss-owkekf-hjk43123-jfidi23-oopprogramming"}'
+  # pgadmin:
+  #   image: dpage/pgadmin4
+  #   ports: 
+  #     - '8081:80'
+  #   environment: 
+  #     PGADMIN_DEFAULT_EMAIL : fhbluebeast356@gmail.com
+  #     PGADMIN_DEFAULT_PASSWORD : 101068
+  #   volumes: 
+  #     - pgadmin-data:/var/lib/pgadmin
+  backend:
+    build: ./backend
+    ports: 
+      - '8089:80'
+    volumes: 
+      - ./backend:/app
+      - /app/node_modules
+    depends_on:
+      - postgres
+  # DUE TO HEAVY PROCESS, IT IS NOT RECOMMENDED TO DEVELOP NUXT APP IN THE CONTAINER. EXCEPT IF WE BUILD IT IN THE SERVER
+  # frontend:
+  #   build: ./frontend
+  #   ports: 
+  #     - '3000:3000'
+  #   volumes: 
+  #     - ./frontend:/app
+  #     - /app/node_modules
+  #   environment: 
+  #     HOST : 0.0.0.0
+  #   depends_on: 
+  #     - backend
+volumes:
+  db_data:
+  pgadmin-data:
